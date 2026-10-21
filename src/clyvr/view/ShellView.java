@@ -114,24 +114,9 @@ public class ShellView extends JPanel {
         });
         actions.add(bell);
 
-        JButton profile = Theme.secondary("●  " + app.current.firstName + "  ▾");
-        profile.addActionListener(e -> {
-            JPopupMenu popup = new JPopupMenu();
-            
-            JMenuItem userInfo = new JMenuItem("User Information");
-            userInfo.setFont(Theme.font(13, false));
-            userInfo.addActionListener(x -> app.navigate("My Information"));
-            popup.add(userInfo);
-
-            popup.addSeparator();
-
-            JMenuItem logout = new JMenuItem("Log out");
-            logout.setFont(Theme.font(13, false));
-            logout.addActionListener(x -> app.logout());
-            popup.add(logout);
-
-            popup.show(profile, 0, profile.getHeight());
-        });
+        // Direct navigation button to User Information without a dropdown menu
+        JButton profile = Theme.secondary("●  " + app.current.firstName);
+        profile.addActionListener(e -> app.navigate("My Information"));
         actions.add(profile);
 
         top.add(actions, BorderLayout.EAST);
@@ -146,7 +131,7 @@ public class ShellView extends JPanel {
         JPanel menu = new JPanel();
         menu.setOpaque(false);
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
-        menu.setBorder(new EmptyBorder(20, 13, 10, 13));
+        menu.setBorder(new EmptyBorder(22, 13, 10, 13));
 
         menu(menu, "Dashboard");
         menu(menu, "Schedule");
@@ -155,6 +140,23 @@ public class ShellView extends JPanel {
         menu(menu, "About Us");
 
         sidebar.add(menu, BorderLayout.NORTH);
+
+        // Dedicated bottom panel containing the Log out button
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
+        bottom.setBorder(new EmptyBorder(10, 13, 20, 13));
+
+        JButton logout = Theme.secondary("⇦   Log out");
+        logout.setAlignmentX(Component.LEFT_ALIGNMENT);
+        logout.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        logout.setPreferredSize(new Dimension(190, 46));
+        logout.setHorizontalAlignment(SwingConstants.CENTER);
+        logout.addActionListener(e -> app.logout());
+
+        bottom.add(logout);
+        sidebar.add(bottom, BorderLayout.SOUTH);
+
         return sidebar;
     }
 
@@ -168,7 +170,7 @@ public class ShellView extends JPanel {
         }
         b.addActionListener(e -> app.navigate(name));
         p.add(b);
-        p.add(Box.createVerticalStrut(6));
+        p.add(Box.createVerticalStrut(12)); // Spacing between navigation links
     }
 
     private JButton nav(String name, boolean active) {

@@ -5,13 +5,15 @@ import clyvr.model.ClinicStore;
 import clyvr.model.Entities.*;
 import clyvr.ui.Theme;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-/** Month calendar matching standard view margin padding. */
+/** Month calendar with consistent hover tooltips, cursors, and visual feedback across date cells. */
 public class ScheduleView extends JPanel {
     private YearMonth month = YearMonth.from(LocalDate.now());
     private final AppController app;
@@ -19,6 +21,7 @@ public class ScheduleView extends JPanel {
     private final JComboBox<String> doctor = new JComboBox<>();
     private final JPanel calendar = new JPanel(new BorderLayout(0, 8));
     private final JLabel monthTitle = Theme.label("", 22, true);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d");
 
     public ScheduleView(AppController app){
         super(new BorderLayout());
@@ -31,7 +34,6 @@ public class ScheduleView extends JPanel {
           case ADMIN -> "View clinic availability. Doctor account management is under Doctors.";
         };
 
-        // Inherits default ViewSupport.page padding (26, 28, 28, 28) for consistent alignment
         JPanel page = ViewSupport.page("Schedule", subtitle);
 
         JPanel shortcuts = ViewSupport.row();
@@ -154,12 +156,35 @@ public class ScheduleView extends JPanel {
         for (int d = 1; d <= month.lengthOfMonth(); d++) {
             LocalDate selected = month.atDay(d);
             boolean enabled = app.store.clinicOpen(selected) && !selected.isBefore(LocalDate.now()) && !selected.isAfter(LocalDate.now().plusDays(30));
-            JButton cell = Theme.button(Integer.toString(d));
-            cell.setFont(Theme.font(16, selected.equals(LocalDate.now())));
-            cell.setPreferredSize(new Dimension(72, 35));
-            cell.setToolTipText(enabled ? "View timeslots for " + selected : "Clinic unavailable on this date");
+            String dateLabel = selected.format(DATE_FORMATTER);
+
             if (enabled) {
+                JButton cell = new JButton(Integer.toString(d));
+                cell.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+                cell.setOpaque(true);
+                cell.setContentAreaFilled(true);
+                cell.setBackground(Theme.WHITE);
+                cell.setForeground(Theme.INK);
+                cell.setFont(Theme.font(16, selected.equals(LocalDate.now())));
+                cell.setPreferredSize(new Dimension(72, 35));
+                cell.setBorder(BorderFactory.createLineBorder(Theme.LINE));
+                cell.setFocusPainted(false);
+                cell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                cell.setToolTipText("View timeslots for " + dateLabel);
                 cell.addActionListener(e -> open(selected));
+
+                // Rollover hover effect for smooth visual response
+                cell.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        cell.setBackground(new Color(230, 242, 245));
+                    }
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        cell.setBackground(Theme.WHITE);
+                    }
+                });
+
                 days.add(cell);
             } else {
                 JLabel closed = Theme.label(Integer.toString(d), 16, false);
@@ -168,7 +193,8 @@ public class ScheduleView extends JPanel {
                 closed.setOpaque(true);
                 closed.setBackground(new Color(192, 221, 226));
                 closed.setBorder(BorderFactory.createLineBorder(Theme.LINE));
-                closed.setToolTipText("Clinic unavailable");
+                closed.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                closed.setToolTipText("Clinic unavailable on " + dateLabel);
                 days.add(closed);
             }
         }
