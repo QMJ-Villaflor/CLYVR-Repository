@@ -27,4 +27,7 @@ public class AppController {
  public void propose(String patientId,String doctor,Type type,LocalDate day,int slot){if(current.role!=Role.DOCTOR||!currentDoctorId().equals(doctor)){error("Only the attending doctor may propose a follow-up/procedure.");return;}try{store.book(patientId,doctor,type,day,slot,true);info("Proposal sent to the patient for approval.");refresh();}catch(Exception ex){error(ex.getMessage());}}
  public String currentDoctorId(){if(current==null)return "";return store.doctors.stream().filter(d->d.userId.equals(current.id)).map(d->d.id).findFirst().orElse("");}
  public static void main(String[] a){SwingUtilities.invokeLater(AppController::new);}
+ public String getPage() {
+    return page != null ? page : "Dashboard";
+}
 }

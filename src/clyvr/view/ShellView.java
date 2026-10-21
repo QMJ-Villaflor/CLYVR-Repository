@@ -4,38 +4,69 @@ import clyvr.controller.AppController;
 import clyvr.model.Entities.Role;
 import clyvr.ui.Theme;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import javax.swing.*;
 import javax.swing.border.*;
 
-/** Consistent original-style header/sidebar around individual page classes. */
+/** Consistent layout wrapper supporting floating AI chat overlay. */
 public class ShellView extends JPanel {
     private final AppController app;
     private final String page;
+    private final FloatingChatWidget chatWidget;
+    private final JLayeredPane layeredPane = new JLayeredPane();
+    private final JPanel mainLayout = new JPanel(new BorderLayout());
 
-    public ShellView(AppController app, String page, JPanel content){
+    public ShellView(AppController app, String page, JPanel content) {
         super(new BorderLayout());
         this.app = app;
         this.page = page;
         setBackground(Theme.BG);
 
-        add(header(), BorderLayout.NORTH);
-        add(sidebar(), BorderLayout.WEST);
+        chatWidget = new FloatingChatWidget(app);
 
+        mainLayout.setBackground(Theme.BG);
+        mainLayout.add(header(), BorderLayout.NORTH);
+        mainLayout.add(sidebar(), BorderLayout.WEST);
+
+        // Body section without the old bottom rectangular helper button panel
         JPanel body = new JPanel(new BorderLayout());
         body.setBackground(Theme.BG);
         body.add(content, BorderLayout.CENTER);
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 18, 6));
-        bottom.setBackground(Theme.BG);
-        JButton helper = Theme.button("✦  AI Assistant");
-        helper.addActionListener(e -> app.navigate("Assistant"));
-        bottom.add(helper);
-        body.add(bottom, BorderLayout.SOUTH);
+        mainLayout.add(body, BorderLayout.CENTER);
 
-        add(body, BorderLayout.CENTER);
+        layeredPane.add(mainLayout, JLayeredPane.DEFAULT_LAYER);
+        layeredPane.add(chatWidget, JLayeredPane.PALETTE_LAYER);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                repositionLayers();
+            }
+        });
+
+        add(layeredPane, BorderLayout.CENTER);
+        repositionLayers();
     }
 
-    private JPanel header(){
+    private void repositionLayers() {
+        int w = getWidth();
+        int h = getHeight();
+        if (w <= 0 || h <= 0) return;
+
+        mainLayout.setBounds(0, 0, w, h);
+
+        int widgetW = 360;
+        int widgetH = 490;
+        int margin = 20;
+
+        chatWidget.setBounds(w - widgetW - margin, h - widgetH - margin, widgetW, widgetH);
+        layeredPane.revalidate();
+        layeredPane.repaint();
+    }
+
+    private JPanel header() {
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(Theme.HEADER);
         top.setPreferredSize(new Dimension(0, 108));
@@ -104,7 +135,7 @@ public class ShellView extends JPanel {
         return top;
     }
 
-    private JPanel sidebar(){
+    private JPanel sidebar() {
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setBackground(Theme.SIDEBAR);
         sidebar.setPreferredSize(new Dimension(219, 0));
@@ -124,7 +155,7 @@ public class ShellView extends JPanel {
         return sidebar;
     }
 
-    private void menu(JPanel p, String name){
+    private void menu(JPanel p, String name) {
         JButton b = nav(name, name.equals(page) || name.equals("Schedule") && (
             page.equals("My Appointments") || page.equals("Patient Approvals") || page.equals("Requests") ||
             page.equals("Timeslots") || page.equals("Reschedule") || page.equals("Book Appointment")));
@@ -137,12 +168,11 @@ public class ShellView extends JPanel {
         p.add(Box.createVerticalStrut(6));
     }
 
-    private JButton nav(String name, boolean active){
+    private JButton nav(String name, boolean active) {
         JButton b = new JButton(name);
         b.setUI(new javax.swing.plaf.basic.BasicButtonUI());
         b.setOpaque(true);
         b.setContentAreaFilled(true);
-        // Sets inactive sidebar buttons to Theme.WHITE so they pop off the sidebar background
         b.setBackground(active ? Theme.CARD_DARK : Theme.WHITE);
         b.setForeground(Theme.INK);
         b.setFont(Theme.font(16, true));
