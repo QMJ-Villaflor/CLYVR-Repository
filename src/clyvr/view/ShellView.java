@@ -1,7 +1,6 @@
 package clyvr.view;
 
 import clyvr.controller.AppController;
-import clyvr.model.Entities.Role;
 import clyvr.ui.Theme;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
@@ -118,15 +117,19 @@ public class ShellView extends JPanel {
         JButton profile = Theme.secondary("●  " + app.current.firstName + "  ▾");
         profile.addActionListener(e -> {
             JPopupMenu popup = new JPopupMenu();
-            for (String itemName : app.current.role == Role.PATIENT ? new String[]{"Legal Information", "Medical Information", "Contact Information"} : new String[]{"Legal Information", "Contact Information"}) {
-                JMenuItem item = new JMenuItem(itemName);
-                item.addActionListener(x -> app.navigate("My Information"));
-                popup.add(item);
-            }
+            
+            JMenuItem userInfo = new JMenuItem("User Information");
+            userInfo.setFont(Theme.font(13, false));
+            userInfo.addActionListener(x -> app.navigate("My Information"));
+            popup.add(userInfo);
+
             popup.addSeparator();
+
             JMenuItem logout = new JMenuItem("Log out");
+            logout.setFont(Theme.font(13, false));
             logout.addActionListener(x -> app.logout());
             popup.add(logout);
+
             popup.show(profile, 0, profile.getHeight());
         });
         actions.add(profile);
