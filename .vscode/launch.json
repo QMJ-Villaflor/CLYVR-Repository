@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run CLYVR",
+      "request": "launch",
+      "mainClass": "clyvr.controller.AppController",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# doctorId|userId|specialty
+D1|U3|General Medicine
+D2|U4|Pediatrics
+D3|U5|Obstetrics and Gynecology
+D4|U6|Odontology

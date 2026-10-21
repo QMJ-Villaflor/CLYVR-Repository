@@ -1,0 +1,9 @@
+# id|username|password|role|firstName|lastName|email|phone
+U1|patient|patient123|PATIENT|Angela|Reyes|angela@example.org|09171230001
+U2|patient2|patient123|PATIENT|Marco|Santos|marco@example.org|09171230002
+U3|doctor|doctor123|DOCTOR|Maria|Santos|maria@clyvr.local|09171230003
+U4|doctor2|doctor123|DOCTOR|Ramon|Cruz|ramon@clyvr.local|09171230004
+U5|doctor3|doctor123|DOCTOR|Elena|Lopez|elena@clyvr.local|09171230005
+U6|doctor4|doctor123|DOCTOR|Paolo|Garcia|paolo@clyvr.local|09171230006
+U7|reception|reception123|RECEPTIONIST|Ana|Dela Cruz|reception@clyvr.local|09171230007
+U8|admin|admin123|ADMIN|Carlo|Mendoza|admin@clyvr.local|09171230008
