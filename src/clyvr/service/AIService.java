@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class AIService {
 
-    private static final String apiKey = System.getenv("GROQ_API_KEY");
+    private static final String API_KEY = System.getenv("GROQ_API_KEY");
     private static final String ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
     private static final String MODEL_NAME = "openai/gpt-oss-20b";
 
