@@ -1,7 +1,6 @@
 package clyvr.view;
 
 import clyvr.controller.AppController;
-import clyvr.model.Entities.*;
 import clyvr.ui.Theme;
 import java.awt.*;
 import java.time.*;
@@ -27,9 +26,6 @@ public class SignUpView extends JPanel {
     private void signUp(AppController app,String email,String password) {
         if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {app.error("Enter a valid email address.");return;}
         if (password.isBlank()) {app.error("Please enter a password.");return;}
-        if (app.store.users.stream().anyMatch(u->u.email.equalsIgnoreCase(email)||u.username.equalsIgnoreCase(email))) {
-            app.error("An account with this email address already exists.");return;
-        }
         // Legal/contact fields remain required from the existing specification.
         JTextField first=Theme.field(),last=Theme.field(),birth=Theme.field(),address=Theme.field(),phone=Theme.field();
         JComboBox<String> sex=new JComboBox<>(new String[]{"Select", "Female", "Male", "Prefer not to say"});
@@ -46,9 +42,10 @@ public class SignUpView extends JPanel {
             LocalDate birthday;
             try{birthday=LocalDate.parse(birth.getText().trim());if(birthday.isAfter(LocalDate.now()))throw new IllegalArgumentException();}
             catch(Exception ex){app.error("Use YYYY-MM-DD for a valid birth date.");continue;}
-            User u=new User(app.store.next("U"),email,password,Role.PATIENT,first.getText().trim(),last.getText().trim(),email,phone.getText().trim());
-            u.birthDate=birthday.toString();u.sex=(String)sex.getSelectedItem();u.address=address.getText().trim();
-            app.store.users.add(u);app.info("Your patient account is ready. Log in with your email address.");app.showLogin();return;
+            app.registerPatient(email,password,first.getText().trim(),last.getText().trim(),
+                    phone.getText().trim(),birthday,(String)sex.getSelectedItem(),
+                    address.getText().trim());
+            return;
         }
     }
     private void addDetail(JPanel panel,String label,JComponent field){panel.add(new JLabel(label));panel.add(field);}

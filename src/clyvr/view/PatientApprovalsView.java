@@ -1,25 +1,138 @@
 package clyvr.view;
 
-import clyvr.controller.AppController;import clyvr.model.ClinicStore;import clyvr.model.Entities.*;import clyvr.ui.Theme;
-import javax.swing.*;import java.awt.*;import java.time.*;import java.util.*;
+import clyvr.controller.AppController;
+import clyvr.database.BackendAppointment;
+import clyvr.model.ClinicStore;
+import clyvr.ui.Theme;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerDateModel;
 
 public class PatientApprovalsView extends JPanel {
- public PatientApprovalsView(AppController app){super(new BorderLayout());JPanel p=ViewSupport.page("Doctor proposals","Approve a follow-up/procedure, select another timeslot, or decline entirely.");int count=0;
-  for(Appointment a:app.store.appointments)if(a.patientId.equals(app.current.id)&&a.status==Status.PENDING_PATIENT){
-   count++;JButton approve=Theme.button("Approve");approve.addActionListener(e->{try{app.store.decide(a,true,"");app.refresh();}catch(Exception ex){app.error(ex.getMessage());}});
-   JButton alternative=Theme.secondary("Choose another time");alternative.addActionListener(e->alternate(app,a));
-   JButton decline=Theme.danger("Decline");decline.addActionListener(e->{if(app.confirm("Decline this appointment proposal entirely?")){app.store.decide(a,false,"Patient declined proposed visit");app.refresh();}});
-   ViewSupport.line(p,app.store.doctorName(a.doctorId),ViewSupport.detail(a),approve,alternative,decline);
-  }
-  if(count==0)p.add(ViewSupport.empty("No doctor proposals are waiting for your response."));add(ViewSupport.wrap(p));
- }
- private void alternate(AppController app,Appointment a){
-  JPanel form=new JPanel(new GridLayout(0,1,5,6));form.add(Theme.label("Select an alternative date",14,true));
-  JSpinner day=new JSpinner(new SpinnerDateModel());day.setEditor(new JSpinner.DateEditor(day,"EEEE, MMMM d, yyyy"));day.setValue(java.sql.Date.valueOf(a.day));form.add(day);
-  form.add(Theme.label("Select an available matching timeslot",14,true));JComboBox<String> times=new JComboBox<>();ArrayList<Integer> slots=new ArrayList<>();
-  for(int i=0;i<8;i++)if(app.store.rightType(a.type,i)){slots.add(i);times.addItem(ClinicStore.TIMES[i]);}form.add(times);
-  if(JOptionPane.showConfirmDialog(this,form,"Approve with a different timeslot",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE)!=JOptionPane.OK_OPTION)return;
-  LocalDate replacement=Instant.ofEpochMilli(((java.util.Date)day.getValue()).getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
-  try{app.store.approveProposalAt(a,replacement,slots.get(times.getSelectedIndex()));app.info("New timeslot confirmed. Your doctor has been notified.");app.refresh();}catch(Exception ex){app.error(ex.getMessage());}
- }
+    public PatientApprovalsView(AppController app) {
+        super(new BorderLayout());
+        JPanel page = ViewSupport.page(
+                "Doctor proposals",
+                "Approve, choose another time, or decline follow-up and procedure proposals.");
+        JPanel rows = Theme.vertical();
+        rows.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        rows.add(ViewSupport.empty("Loading doctor proposals…"));
+        page.add(rows);
+        add(ViewSupport.wrap(page));
+        load(app, rows);
+    }
+
+    private static void load(AppController app, JPanel rows) {
+        rows.removeAll();
+        app.loadAppointments(appointments -> {
+            List<BackendAppointment> proposals = appointments.stream()
+                    .filter(appointment -> "PENDING_PATIENT".equals(appointment.status()))
+                    .filter(appointment -> "FOLLOW_UP".equals(appointment.appointmentType())
+                            || "PROCEDURE".equals(appointment.appointmentType()))
+                    .toList();
+            for (BackendAppointment proposal : proposals) {
+                JButton approve = Theme.button("Approve");
+                JButton alternative = Theme.secondary("Choose another time");
+                JButton decline = Theme.danger("Decline proposal");
+                approve.addActionListener(event -> {
+                    approve.setEnabled(false);
+                    alternative.setEnabled(false);
+                    decline.setEnabled(false);
+                    app.decideDoctorProposal(proposal.appointmentId(), true, null, null,
+                            () -> {
+                                app.info("Proposal confirmed. Your appointment list was refreshed.");
+                                app.navigate("Patient Approvals");
+                            }, failure -> {
+                                approve.setEnabled(true);
+                                alternative.setEnabled(true);
+                                decline.setEnabled(true);
+                                app.error(failure.getMessage());
+                            });
+                });
+                alternative.addActionListener(event -> chooseAlternative(
+                        app, proposal, approve, alternative));
+                decline.addActionListener(event -> {
+                    if (!app.confirm("Decline this proposal? It will no longer reserve its proposed timeslot.")) {
+                        return;
+                    }
+                    approve.setEnabled(false);
+                    alternative.setEnabled(false);
+                    decline.setEnabled(false);
+                    app.decideDoctorProposal(proposal.appointmentId(), false, null, null,
+                            () -> {
+                                app.info("Proposal declined. The doctor has been notified.");
+                                app.navigate("Patient Approvals");
+                            }, failure -> {
+                                approve.setEnabled(true);
+                                alternative.setEnabled(true);
+                                decline.setEnabled(true);
+                                app.error(failure.getMessage());
+                            });
+                });
+                ViewSupport.line(rows, proposal.doctorName(), proposal.summary(),
+                        approve, alternative, decline);
+            }
+            if (proposals.isEmpty()) {
+                rows.add(ViewSupport.empty("No doctor proposals are waiting for your response."));
+            }
+            rows.revalidate();
+            rows.repaint();
+        }, failure -> {
+            rows.removeAll();
+            rows.add(ViewSupport.empty("Doctor proposals could not be loaded from the backend."));
+            rows.revalidate();
+            rows.repaint();
+        });
+    }
+
+    private static void chooseAlternative(
+            AppController app, BackendAppointment proposal,
+            JButton approve, JButton alternative) {
+        JPanel form = new JPanel(new GridLayout(0, 1, 5, 6));
+        form.add(Theme.label("Select an alternative date", 14, true));
+        JSpinner day = new JSpinner(new SpinnerDateModel());
+        day.setEditor(new JSpinner.DateEditor(day, "EEEE, MMMM d, yyyy"));
+        day.setValue(java.sql.Date.valueOf(proposal.appointmentDate()));
+        form.add(day);
+        form.add(Theme.label("Select a matching timeslot", 14, true));
+        JComboBox<String> times = new JComboBox<>();
+        List<Integer> slots = new ArrayList<>();
+        boolean procedure = "PROCEDURE".equals(proposal.appointmentType());
+        for (int slot = 0; slot < ClinicStore.TIMES.length; slot++) {
+            if ((slot % 2 == 1) == procedure) {
+                slots.add(slot);
+                times.addItem(ClinicStore.TIMES[slot]);
+            }
+        }
+        form.add(times);
+        if (JOptionPane.showConfirmDialog(null, form, "Approve with a different timeslot",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) {
+            return;
+        }
+        int selectedSlot = slots.get(times.getSelectedIndex());
+        LocalDate replacement = Instant.ofEpochMilli(
+                ((java.util.Date) day.getValue()).getTime())
+                .atZone(ZoneId.systemDefault()).toLocalDate();
+        approve.setEnabled(false);
+        alternative.setEnabled(false);
+        app.decideDoctorProposal(proposal.appointmentId(), true, replacement, selectedSlot,
+                () -> {
+                    app.info("Alternative timeslot confirmed. Your appointment list was refreshed.");
+                    app.navigate("Patient Approvals");
+                }, failure -> {
+                    approve.setEnabled(true);
+                    alternative.setEnabled(true);
+                    app.error(failure.getMessage());
+                });
+    }
 }

@@ -87,31 +87,8 @@ public class ShellView extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 15));
         actions.setOpaque(false);
 
-        long unread = app.store.notices.stream().filter(n -> n.userId.equals(app.current.id) && !n.read).count();
-        JButton bell = Theme.secondary("Notifications" + (unread > 0 ? "  (" + unread + ")" : ""));
-        bell.addActionListener(e -> {
-            JPopupMenu popup = new JPopupMenu();
-            int count = 0;
-            for (clyvr.model.Entities.Notice notice : app.store.notices) {
-                if (!notice.userId.equals(app.current.id)) continue;
-                if (count++ == 5) break;
-                String txt = notice.text.length() > 62 ? notice.text.substring(0, 61) + "…" : notice.text;
-                JMenuItem item = new JMenuItem((notice.read ? "" : "●  ") + txt);
-                item.setFont(Theme.font(12, false));
-                item.addActionListener(x -> app.navigate("Notifications"));
-                popup.add(item);
-            }
-            if (count == 0) {
-                JMenuItem no = new JMenuItem("No notifications yet");
-                no.setEnabled(false);
-                popup.add(no);
-            }
-            popup.addSeparator();
-            JMenuItem all = new JMenuItem("View all notifications");
-            all.addActionListener(x -> app.navigate("Notifications"));
-            popup.add(all);
-            popup.show(bell, 0, bell.getHeight());
-        });
+        JButton bell = Theme.secondary("Notifications");
+        bell.addActionListener(e -> app.navigate("Notifications"));
         actions.add(bell);
 
         // Direct navigation button to User Information without a dropdown menu

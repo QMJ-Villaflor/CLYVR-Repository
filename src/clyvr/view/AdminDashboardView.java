@@ -9,7 +9,7 @@ import java.awt.*;
 public class AdminDashboardView extends JPanel {
     public AdminDashboardView(AppController app){
         super(new BorderLayout());
-        JPanel p = ViewSupport.page("Good day, Admin " + app.current.firstName, "Doctor account administration.");
+        JPanel p = ViewSupport.page("Good day, Admin " + app.current.firstName, "DEMO ONLY — doctor management below changes local fixture data, not backend records.");
 
         JLabel header = Theme.label("Doctors in the Clinic", 21, true);
         header.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -18,8 +18,8 @@ public class AdminDashboardView extends JPanel {
 
         // Metric summary card
         itemsContainer.add(DashboardLayout.itemCard(
-            app.store.doctors.size() + " registered doctors",
-            "Administrator tools are limited to doctor account management."
+            app.store.doctors.size() + " demo doctors",
+            "These accounts exist only in the local demonstration."
         ));
         itemsContainer.add(Box.createVerticalStrut(12));
 
@@ -43,7 +43,7 @@ public class AdminDashboardView extends JPanel {
         // Right section
         JPanel right = DashboardLayout.section("Quick Actions", true);
         JPanel actions = DashboardLayout.stack();
-        DashboardLayout.action(actions, "+   Add or remove doctor", () -> app.navigate("Doctor Management"));
+        DashboardLayout.action(actions, "+   Add or remove demo doctor", () -> app.navigate("Doctor Management"));
         DashboardLayout.action(actions, "▤   View doctors directory", () -> app.navigate("Doctors"));
         DashboardLayout.cardBody(right, actions);
 

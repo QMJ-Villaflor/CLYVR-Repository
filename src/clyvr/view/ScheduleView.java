@@ -1,6 +1,8 @@
 package clyvr.view;
 
 import clyvr.controller.AppController;
+import clyvr.database.DoctorDirectoryEntry;
+import clyvr.database.DoctorScheduleSelection;
 import clyvr.model.ClinicStore;
 import clyvr.model.Entities.*;
 import clyvr.ui.Theme;
@@ -18,9 +20,13 @@ public class ScheduleView extends JPanel {
     private YearMonth month = YearMonth.from(LocalDate.now());
     private final AppController app;
     private final JComboBox<String> service = new JComboBox<>();
-    private final JComboBox<String> doctor = new JComboBox<>();
+    private final JComboBox<Object> doctor = new JComboBox<>();
     private final JPanel calendar = new JPanel(new BorderLayout(0, 8));
     private final JLabel monthTitle = Theme.label("", 22, true);
+    private final JLabel dataStatus = Theme.muted("");
+    private java.util.List<DoctorDirectoryEntry> databaseDoctors = java.util.List.of();
+    private boolean databaseDoctorsReady;
+    private boolean databaseDoctorLoadFailed;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMM d");
 
     public ScheduleView(AppController app){
@@ -30,8 +36,8 @@ public class ScheduleView extends JPanel {
         String subtitle = switch(app.current.role) {
           case PATIENT -> "Select a service OR a doctor, then a date and a timeslot to request a consultation.";
           case DOCTOR -> "Review your assigned timeslots, patient visits and schedule requests.";
-          case RECEPTIONIST -> "Review booking requests and check doctor availability.";
-          case ADMIN -> "View clinic availability. Doctor account management is under Doctors.";
+          case RECEPTIONIST -> "DEMO ONLY — this calendar shows local fixture availability. Review persisted requests in Review Requests.";
+          case ADMIN -> "DEMO ONLY — this calendar shows local fixture availability. Doctor account management is also local.";
         };
 
         JPanel page = ViewSupport.page("Schedule", subtitle);
@@ -69,21 +75,35 @@ public class ScheduleView extends JPanel {
         controls.add(service);
 
         controls.add(Theme.label("OR  Doctor", 14, true));
-        doctor.addItem("All doctors");
-        for (Doctor d : app.store.doctors) {
-            if (app.current.role != Role.DOCTOR || d.id.equals(app.currentDoctorId())) {
-                doctor.addItem(app.store.doctorName(d.id));
+        if (app.current.role == Role.PATIENT) {
+            doctor.addItem("Loading database doctors…");
+            databaseDoctorsReady = false;
+        } else if (app.current.role == Role.DOCTOR) {
+            doctor.addItem("My database schedule");
+            databaseDoctorsReady = true;
+        } else {
+            doctor.addItem("All doctors");
+            for (Doctor d : app.store.doctors) {
+                if (app.current.role != Role.DOCTOR || d.id.equals(app.currentDoctorId())) {
+                    doctor.addItem(new DemoDoctorChoice(d.id, app.store.doctorName(d.id)));
+                }
             }
-        }
-        if (app.current.role == Role.DOCTOR && doctor.getItemCount() > 1) {
-            doctor.setSelectedIndex(1);
+            if (app.current.role == Role.DOCTOR && doctor.getItemCount() > 1) {
+                doctor.setSelectedIndex(1);
+            }
+            databaseDoctorsReady = true;
         }
         doctor.setPreferredSize(new Dimension(230, 39));
+        doctor.setRenderer(new DoctorOptionRenderer());
         controls.add(doctor);
         filters.add(controls, BorderLayout.CENTER);
 
-        JLabel help = Theme.muted("Weekdays only   ·   Booking up to 30 days ahead   ·   8 daily appointment slots");
-        filters.add(help, BorderLayout.SOUTH);
+        dataStatus.setText(app.current.role == Role.PATIENT
+            ? "Loading synthetic database doctors. Availability is read through the local backend."
+            : app.current.role == Role.DOCTOR
+                ? "Your appointment schedule and slot availability are loaded from the backend."
+                : "Legacy session fixture schedule — not database availability.");
+        filters.add(dataStatus, BorderLayout.SOUTH);
 
         page.add(filters);
         Theme.space(page, 13);
@@ -101,6 +121,30 @@ public class ScheduleView extends JPanel {
         doctor.addActionListener(e -> {
             if (doctor.getSelectedIndex() > 0 && service.getSelectedIndex() > 0) service.setSelectedIndex(0);
         });
+
+        if (app.current.role == Role.PATIENT) {
+            app.loadMappedDoctors(doctors -> {
+                databaseDoctors = java.util.List.copyOf(doctors);
+                doctor.removeAllItems();
+                doctor.addItem("All doctors");
+                for (DoctorDirectoryEntry entry : databaseDoctors) {
+                    doctor.addItem(entry);
+                }
+                databaseDoctorsReady = true;
+                dataStatus.setText(databaseDoctors.isEmpty()
+                    ? "No mapped synthetic doctors are available. Check the backend mappings."
+                    : "Database doctors loaded. Available consultation slots can be requested; the backend rechecks each slot before saving.");
+                rebuild();
+            }, failure -> {
+                databaseDoctorLoadFailed = true;
+                doctor.removeAllItems();
+                doctor.addItem("Database doctor list unavailable");
+                dataStatus.setText("Could not load mapped database doctors. Refresh the directory before scheduling.");
+                rebuild();
+            });
+        } else if (app.current.role == Role.DOCTOR) {
+            dataStatus.setText("Your database schedule supports persisted time-off requests and proposals to eligible patients.");
+        }
 
         rebuild();
         add(ViewSupport.wrap(page));
@@ -156,6 +200,9 @@ public class ScheduleView extends JPanel {
         for (int d = 1; d <= month.lengthOfMonth(); d++) {
             LocalDate selected = month.atDay(d);
             boolean enabled = app.store.clinicOpen(selected) && !selected.isBefore(LocalDate.now()) && !selected.isAfter(LocalDate.now().plusDays(30));
+            if (app.current.role == Role.PATIENT && (!databaseDoctorsReady || databaseDoctorLoadFailed || databaseDoctors.isEmpty())) {
+                enabled = false;
+            }
             String dateLabel = selected.format(DATE_FORMATTER);
 
             if (enabled) {
@@ -205,14 +252,42 @@ public class ScheduleView extends JPanel {
 
     private void open(LocalDate day){
         String chosen = (String) service.getSelectedItem();
-        String chosenDoc = (String) doctor.getSelectedItem();
+        if (app.current.role == Role.DOCTOR) {
+            app.showDoctorDatabaseSchedule(day);
+            return;
+        }
+        if (app.current.role == Role.PATIENT) {
+            DoctorDirectoryEntry selected = doctor.getSelectedItem() instanceof DoctorDirectoryEntry entry
+                ? entry
+                : null;
+            app.showDatabaseTimeslots(new DoctorScheduleSelection(
+                day,
+                chosen,
+                selected,
+                databaseDoctors
+            ));
+            return;
+        }
+        Object selectedDoctor = doctor.getSelectedItem();
         String did = "";
-        if (!"All doctors".equals(chosenDoc)) {
-            for (Doctor d : app.store.doctors) {
-                if (app.store.doctorName(d.id).equals(chosenDoc)) did = d.id;
-            }
+        if (selectedDoctor instanceof DemoDoctorChoice demoDoctor) {
+            did = demoDoctor.id;
         }
         if (app.current.role == Role.DOCTOR) did = app.currentDoctorId();
         app.showTimeslots(day, did, chosen);
+    }
+
+    private record DemoDoctorChoice(String id, String name) {
+        @Override public String toString(){return name;}
+    }
+
+    private static final class DoctorOptionRenderer extends DefaultListCellRenderer {
+        @Override public Component getListCellRendererComponent(
+                JList<?> list,Object value,int index,boolean selected,boolean focused) {
+            String label=value instanceof DoctorDirectoryEntry entry
+                ? entry.displayName()+" · "+entry.specialty()
+                : value instanceof DemoDoctorChoice demo ? demo.name : String.valueOf(value);
+            return super.getListCellRendererComponent(list,label,index,selected,focused);
+        }
     }
 }

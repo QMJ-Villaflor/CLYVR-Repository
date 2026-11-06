@@ -53,7 +53,7 @@ public class ClinicStore {
  public void expire(){LocalDateTime now=LocalDateTime.now();for(Appointment a:appointments){if(a.status==Status.PENDING_PATIENT||a.status==Status.PENDING_RECEPTIONIST){LocalDateTime deadline=a.createdAt.plusDays(7);LocalDateTime endOfDate=a.day.plusDays(1).atStartOfDay();if(!now.isBefore(deadline.isBefore(endOfDate)?deadline:endOfDate)){a.status=Status.EXPIRED;notify(a.patientId,"Request "+a.id+" expired; its slot was released.");}}}}
  public void notify(String userId,String content){notices.add(0,new Notice(userId,content));}
  public void notifyRole(Role role,String content){for(User u:users)if(u.role==role)notify(u.id,content);}
- public Appointment book(String pid,String did,Type type,LocalDate day,int slot, boolean byDoctor){
+ public void validateBooking(String pid,String did,Type type,LocalDate day,int slot,boolean byDoctor){
   expire(); if(!clinicOpen(day)||day.isBefore(LocalDate.now())||day.isAfter(LocalDate.now().plusDays(30)))throw new IllegalArgumentException("Choose a clinic weekday within the next 30 days.");
   if(!rightType(type,slot))throw new IllegalArgumentException("That timeslot is for a different appointment type.");
   if(!LocalDateTime.now().isBefore(slotStart(day,slot)))throw new IllegalArgumentException("The selected time has already started.");
@@ -62,9 +62,19 @@ public class ClinicStore {
   if(byDoctor&&type==Type.CONSULTATION)throw new IllegalArgumentException("Doctors may only propose procedures or follow-ups.");
   if(byDoctor&&!eligible(did,pid))throw new IllegalArgumentException("This patient has no completed consultation with you.");
   if(!byDoctor&&type!=Type.CONSULTATION)throw new IllegalArgumentException("Patients may request consultations only.");
+ }
+ public Appointment book(String pid,String did,Type type,LocalDate day,int slot, boolean byDoctor){
+  validateBooking(pid,did,type,day,slot,byDoctor);
   Appointment a=new Appointment(next("AP"),pid,did,type,day,slot,byDoctor?Status.PENDING_PATIENT:Status.PENDING_RECEPTIONIST,LocalDateTime.now());appointments.add(a);
   notify(pid,byDoctor?doctorName(did)+" proposed a "+type+" visit. Please respond.":"Consultation requested. Await receptionist approval.");
   if(!byDoctor)notifyRole(Role.RECEPTIONIST,"New consultation request "+a.id+" needs review.");
+  return a;
+ }
+ public Appointment recordPersistedConsultation(String pid,String did,LocalDate day,int slot,String reason,long databaseId){
+  Appointment a=new Appointment(Long.toString(databaseId),pid,did,Type.CONSULTATION,day,slot,Status.PENDING_RECEPTIONIST,LocalDateTime.now());
+  a.reason=reason;a.persisted=true;appointments.add(a);
+  notify(pid,"Consultation requested. Await receptionist approval.");
+  notifyRole(Role.RECEPTIONIST,"New consultation request "+a.id+" needs review.");
   return a;
  }
  public void decide(Appointment a, boolean approve, String reason){

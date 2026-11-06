@@ -26,7 +26,8 @@ public final class Entities {
   public LocalDate day;
   public int slot;
   public Status status;
-  public final LocalDateTime createdAt;
+ public boolean persisted;
+ public final LocalDateTime createdAt;
   public String reason="";
   public Appointment(String id,String patientId,String doctorId,Type type,LocalDate day,int slot,Status status,LocalDateTime createdAt){this.id=id;this.patientId=patientId;this.doctorId=doctorId;this.type=type;this.day=day;this.slot=slot;this.status=status;this.createdAt=createdAt;}
   public boolean occupies(){return status==Status.PENDING_RECEPTIONIST||status==Status.PENDING_PATIENT||status==Status.CONFIRMED;}

@@ -1,6 +1,7 @@
 package clyvr.view;
 
 import clyvr.controller.*;
+import clyvr.database.DoctorDirectoryEntry;
 import clyvr.model.Entities.*;
 import clyvr.ui.*;
 import javax.swing.*;
@@ -11,20 +12,66 @@ import java.awt.*;
 public class DoctorsView extends JPanel {
  public DoctorsView(AppController app){
   super(new BorderLayout());
-  JPanel p=ViewSupport.page("Our Doctors","Meet the clinic's healthcare professionals");
+  JPanel p=ViewSupport.page("Our Doctors","Synthetic mapped database directory · demo login remains local");
 
   if(app.current.role==Role.ADMIN){
    JPanel controls=ViewSupport.row();
-   JButton manage=Theme.button("+  Add / remove doctors");
+   JButton manage=Theme.button("Demo-only · +  Add / remove doctors");
    manage.addActionListener(e->app.navigate("Doctor Management"));
    controls.add(manage);
    p.add(controls);
    Theme.space(p,15);
   }
 
-  for(Doctor d:app.store.doctors){
-   String name=app.store.doctorName(d.id);
-   String specialty=d.specialty;
+  JPanel directory=Theme.vertical();
+  directory.setAlignmentX(Component.LEFT_ALIGNMENT);
+  JLabel status=Theme.muted("Loading mapped synthetic doctors…");
+  status.setAlignmentX(Component.LEFT_ALIGNMENT);
+  p.add(status);
+  Theme.space(p,10);
+  JButton refresh=Theme.secondary("Refresh directory");
+  refresh.setAlignmentX(Component.LEFT_ALIGNMENT);
+  p.add(refresh);
+  Theme.space(p,12);
+  p.add(directory);
+  refresh.addActionListener(e->loadDirectory(app,directory,status,refresh));
+  loadDirectory(app,directory,status,refresh);
+  add(ViewSupport.wrap(p));
+ }
+
+ private void loadDirectory(AppController app,JPanel directory,JLabel status,JButton refresh){
+  refresh.setEnabled(false);
+  status.setText("Loading mapped synthetic doctors…");
+  directory.removeAll();
+  directory.revalidate();
+  directory.repaint();
+  app.loadMappedDoctors(doctors->{
+   directory.removeAll();
+   for(DoctorDirectoryEntry doctor:doctors)addDoctorCard(directory,doctor);
+   status.setText(doctors.isEmpty()
+     ?"No mapped synthetic doctors are configured for this directory."
+     :"Showing "+doctors.size()+" configured synthetic database doctor(s). Doctor management remains demo-only.");
+   refresh.setEnabled(true);
+   directory.revalidate();
+   directory.repaint();
+  },failure->{
+   String message=failure.getMessage();
+   if(message!=null&&message.contains("missing its linked user")){
+    status.setText("A mapped doctor is missing its linked users row. Check the synthetic database records.");
+   }else if(message!=null&&message.contains("more than one row")){
+    status.setText("The database returned ambiguous rows for a mapped doctor. Check the synthetic records.");
+   }else if(message!=null&&message.contains("IDs were not found")){
+    status.setText("A configured synthetic doctor ID was not found. Check the local ID mappings.");
+   }else{
+    status.setText("Could not load the synthetic doctor directory. Check the database connection and configured ID mappings.");
+   }
+   refresh.setEnabled(true);
+  });
+ }
+
+ private void addDoctorCard(JPanel p,DoctorDirectoryEntry doctor){
+   String name=doctor.displayName();
+   String specialty=doctor.specialty();
 
    JPanel card=Theme.card(new BorderLayout(14,10));
    card.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -88,15 +135,13 @@ public class DoctorsView extends JPanel {
 
    p.add(card);
    Theme.space(p,12);
-  }
-  add(ViewSupport.wrap(p));
  }
 
  private String getProfessionalExperience(String specialty){
   String normalized=specialty==null ? "" : specialty.toLowerCase();
 
   if(normalized.contains("cardio"))
-   return "Dr. Laurencia Trinchera is a cardiologist with experience in general heart care and the management of common cardiovascular conditions, including high blood pressure and heart disease.\n\nShe provides consultations for patients who need routine heart checkups, blood pressure monitoring, or guidance regarding ongoing cardiovascular concerns.";
+   return "Provides consultations for general heart care and the management of common cardiovascular conditions, including high blood pressure and heart disease.\n\nPatients can book routine heart checkups, blood pressure monitoring, or guidance regarding ongoing cardiovascular concerns.";
 
   if(normalized.contains("pediatric"))
    return "Provides consultations focused on children's health, routine checkups, "
