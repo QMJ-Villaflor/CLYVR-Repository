@@ -27,7 +27,7 @@ public class ClinicStore {
   catch(IOException e){throw new IllegalStateException("Missing seed data: "+p.toAbsolutePath(),e);}
  }
  private void load(){
-  for(String[] a:lines("users.txt"))users.add(new User(a[0],a[1],a[2],Role.valueOf(a[3]),a[4],a[5],a[6],a[7]));
+  for(String[] a:lines("users.txt"))users.add(new User(a[0],a[1],clyvr.security.FirebaseScrypt.isHashed(a[2])?a[2]:clyvr.security.FirebaseScrypt.hash(a[2]),Role.valueOf(a[3]),a[4],a[5],a[6],a[7]));
   for(String[] a:lines("doctors.txt"))doctors.add(new Doctor(a[0],a[1],a[2]));
   for(String[] a:lines("appointments.txt")){
    LocalDate day=LocalDate.now().plusDays(Integer.parseInt(a[4]));
@@ -117,6 +117,7 @@ public class ClinicStore {
   notify(r.requesterId,"Your "+r.kind.toLowerCase()+" request for "+a.id+" was "+(approve?"approved":"rejected")+". "+reason);
   if(approve&&r.kind.equals("RESCHEDULE")){notify(r.requesterId,"Appointment "+a.id+" moved to "+a.day+" · "+TIMES[a.slot]+".");Doctor d=doctor(a.doctorId);if(d!=null)notify(d.userId,"Appointment "+a.id+" rescheduled to "+a.day+" · "+TIMES[a.slot]+".");}
  }
- public Doctor addDoctor(String first,String last,String specialty){String uid=next("U"),did=next("D");User u=new User(uid,"dr"+uid.toLowerCase(),"doctor123",Role.DOCTOR,first,last,first.toLowerCase()+"@clyvr.local","");users.add(u);Doctor d=new Doctor(did,uid,specialty);doctors.add(d);return d;}
+ public void changePassword(User u,String newPassword){u.password=clyvr.security.FirebaseScrypt.hash(newPassword);}
+ public Doctor addDoctor(String first,String last,String specialty){String uid=next("U"),did=next("D");User u=new User(uid,"dr"+uid.toLowerCase(),clyvr.security.FirebaseScrypt.hash("doctor123"),Role.DOCTOR,first,last,first.toLowerCase()+"@clyvr.local","");users.add(u);Doctor d=new Doctor(did,uid,specialty);doctors.add(d);return d;}
  public void removeDoctor(String did){boolean active=appointments.stream().anyMatch(a->a.doctorId.equals(did)&&a.occupies())||timeOffs.stream().anyMatch(t->t.doctorId.equals(did)&&t.status==TimeOffStatus.PENDING);if(active)throw new IllegalArgumentException("Resolve active appointments and pending time-off requests before removal.");Doctor d=doctor(did);if(d==null)return;formerDoctors.put(did,doctorName(did));doctors.remove(d);users.removeIf(u->u.id.equals(d.userId));}
 }

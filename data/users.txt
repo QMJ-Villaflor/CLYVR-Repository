@@ -1,9 +1,9 @@
 # id|username|password|role|firstName|lastName|email|phone
-U1|patient|patient123|PATIENT|Angela|Reyes|angela@example.org|09171230001
-U2|patient2|patient123|PATIENT|Marco|Santos|marco@example.org|09171230002
-U3|doctor|doctor123|DOCTOR|Maria|Santos|maria@clyvr.local|09171230003
-U4|doctor2|doctor123|DOCTOR|Ramon|Cruz|ramon@clyvr.local|09171230004
-U5|doctor3|doctor123|DOCTOR|Elena|Lopez|elena@clyvr.local|09171230005
-U6|doctor4|doctor123|DOCTOR|Paolo|Garcia|paolo@clyvr.local|09171230006
-U7|reception|reception123|RECEPTIONIST|Ana|Dela Cruz|reception@clyvr.local|09171230007
-U8|admin|admin123|ADMIN|Carlo|Mendoza|admin@clyvr.local|09171230008
+U1|patient|fbscrypt$B3P+HUuBRozg7wq6ywx20A==$v3MeLNx/PIHw9vcRirWkZbvYT89TlO995QhTVVo7EBnTbgMUneIwI889ckCpb1XfZhl5bhEqLjx3EdLF4S257Q==|PATIENT|Angela|Reyes|angela@example.org|09171230001
+U2|patient2|fbscrypt$GAOwppXGozXH2nWsTkTVgA==$uCvTH6960K4GQtCxkDGg3O9fhPjLHDJqB7iX/X62PbcAKC/BbXYwb79aWo47GYTpulTJ+r6xjKP3Sa7r5XeLWw==|PATIENT|Marco|Santos|marco@example.org|09171230002
+U3|doctor|fbscrypt$Y3EEeLPgj7Jvhpuw74PA0w==$xSAzIa/W6NDDCK1iuYcEMvuChwKgYm1IN+8pUwxwsnq5IAbSLH0ENYS4CTOlUNzJ/fKzdvwpCpLI83ctYlJDgg==|DOCTOR|Maria|Santos|maria@clyvr.local|09171230003
+U4|doctor2|fbscrypt$5YZNyu4xKbahGC/6j8j6hQ==$27E1KgkFtj1IH67p+gnEzOseclRkNMguB6zzkCldiEjM6wz6M1V9a+1p6tnlbWBvPquLRxwZPYaRb3wbDLWCnQ==|DOCTOR|Ramon|Cruz|ramon@clyvr.local|09171230004
+U5|doctor3|fbscrypt$CG0zGmsxKIBnY5sGyC8Fbg==$4hXUgYU5MUFlGML5r94DeMX14EgGf/St6jt5WFmaMTno2uU26WeXnr+GxQSGyEd199IIAig8EGnFGi2w0Bj9uw==|DOCTOR|Elena|Lopez|elena@clyvr.local|09171230005
+U6|doctor4|fbscrypt$UIh5JSCZP/3NZxpicA4new==$NdBbwTl/iTwffySwciKAyVz8Cr+h/Wl8ti+gODxCazEFagl/HwSl725czVHKkaTlAMALbEskm/824Bxt9FrSwA==|DOCTOR|Paolo|Garcia|paolo@clyvr.local|09171230006
+U7|reception|fbscrypt$J1CVtqHylo30TcyOcS73rw==$scMqUZKS0m4OkWxgO5tf5eMp23xeix1xLs1jULg9Zl7NFaHhBRnk9k/PugFFUMtFt0fGSOs0iXEpDov+0cz3jA==|RECEPTIONIST|Ana|Dela Cruz|reception@clyvr.local|09171230007
+U8|admin|fbscrypt$Bbj7Lk0+mj8f8B6EGXCgDg==$CnmwnPuh7HatrNbEXWGSdxPSkdx9Afx6AaROd0cOJslyfjO0eJK6JI3cfHioQdxmCgv44rAl4SBqiZgXBa1WdQ==|ADMIN|Carlo|Mendoza|admin@clyvr.local|09171230008

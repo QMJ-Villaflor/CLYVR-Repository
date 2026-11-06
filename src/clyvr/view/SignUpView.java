@@ -25,8 +25,8 @@ public class SignUpView extends JPanel {
         add(AuthLayout.shell(form),BorderLayout.CENTER);
     }
     private void signUp(AppController app,String email,String password) {
-        if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {app.error("Enter a valid email address.");return;}
-        if (password.isBlank()) {app.error("Please enter a password.");return;}
+        String emailError=clyvr.security.Validator.email(email);if (emailError!=null) {app.error(emailError);return;}
+        String passwordError=clyvr.security.Validator.password(password,email);if (passwordError!=null) {app.error(passwordError);return;}
         if (app.store.users.stream().anyMatch(u->u.email.equalsIgnoreCase(email)||u.username.equalsIgnoreCase(email))) {
             app.error("An account with this email address already exists.");return;
         }
@@ -46,7 +46,9 @@ public class SignUpView extends JPanel {
             LocalDate birthday;
             try{birthday=LocalDate.parse(birth.getText().trim());if(birthday.isAfter(LocalDate.now()))throw new IllegalArgumentException();}
             catch(Exception ex){app.error("Use YYYY-MM-DD for a valid birth date.");continue;}
-            User u=new User(app.store.next("U"),email,password,Role.PATIENT,first.getText().trim(),last.getText().trim(),email,phone.getText().trim());
+            String problem=clyvr.security.Validator.firstError(clyvr.security.Validator.name("First name",first.getText()),clyvr.security.Validator.name("Last name",last.getText()),clyvr.security.Validator.birthDate(birthday),clyvr.security.Validator.address(address.getText()),clyvr.security.Validator.phone(phone.getText()));
+            if(problem!=null){app.error(problem);continue;}
+            User u=new User(app.store.next("U"),email,clyvr.security.FirebaseScrypt.hash(password),Role.PATIENT,first.getText().trim(),last.getText().trim(),email,phone.getText().trim());
             u.birthDate=birthday.toString();u.sex=(String)sex.getSelectedItem();u.address=address.getText().trim();
             app.store.users.add(u);app.info("Your patient account is ready. Log in with your email address.");app.showLogin();return;
         }

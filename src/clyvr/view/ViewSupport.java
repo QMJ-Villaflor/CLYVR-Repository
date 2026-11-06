@@ -42,8 +42,9 @@ public final class ViewSupport {
         form.add(top,BorderLayout.NORTH);
         JPanel details=new JPanel(new BorderLayout(5,5));details.add(Theme.label("Written explanation (required)",14,true),BorderLayout.NORTH);details.add(new JScrollPane(explanation),BorderLayout.CENTER);form.add(details,BorderLayout.CENTER);
         while(true){int r=JOptionPane.showConfirmDialog(parent,form,"Reject request",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE);if(r!=JOptionPane.OK_OPTION)return null;
-            if(!explanation.getText().isBlank())return reasons.getSelectedItem()+": "+explanation.getText().trim();
-            JOptionPane.showMessageDialog(parent,"Please provide a written explanation.","Explanation required",JOptionPane.WARNING_MESSAGE);
+            String problem=clyvr.security.Validator.longText("Explanation",explanation.getText());
+            if(problem==null)return reasons.getSelectedItem()+": "+explanation.getText().trim();
+            JOptionPane.showMessageDialog(parent,problem,"Explanation required",JOptionPane.WARNING_MESSAGE);
         }
     }
     public static boolean writable(String s){return s!=null&&!s.isBlank();}

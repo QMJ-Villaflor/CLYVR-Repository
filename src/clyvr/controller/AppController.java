@@ -7,7 +7,14 @@ public class AppController {
  public AppController(){Theme.setup();frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);frame.setMinimumSize(new Dimension(1050,700));frame.setSize(1250,800);frame.setLocationRelativeTo(null);showLogin();frame.setVisible(true);}
  public void showLogin(){frame.setContentPane(new LoginView(this));frame.revalidate();frame.repaint();}
  public void showSignUp(){frame.setContentPane(new SignUpView(this));frame.revalidate();frame.repaint();}
- public void login(String username,String password){current=store.users.stream().filter(u->(u.username.equalsIgnoreCase(username.trim())||u.email.equalsIgnoreCase(username.trim()))&&u.password.equals(password)).findFirst().orElse(null);if(current==null){error("Invalid username or password.");return;}page="Dashboard";navigate("Dashboard");}
+ public void login(String username,String password){
+  String key=username==null?"":username.trim().toLowerCase();
+  if(key.isEmpty()||password==null||password.isEmpty()){error("Enter your email address and password.");return;}
+  long wait=clyvr.security.LoginGuard.secondsLocked(key);
+  if(wait>0){error("Too many failed attempts. Try again in "+clyvr.security.LoginGuard.describe(wait)+".");return;}
+  current=store.users.stream().filter(u->(u.username.equalsIgnoreCase(username.trim())||u.email.equalsIgnoreCase(username.trim()))&&clyvr.security.FirebaseScrypt.verify(password,u.password)).findFirst().orElse(null);if(current==null){int left=clyvr.security.LoginGuard.recordFailure(key);
+   error(left>0?"Invalid username or password. "+left+(left==1?" attempt":" attempts")+" remaining before a temporary lock.":"Too many failed attempts. This account is locked for 5 minutes.");return;}
+  clyvr.security.LoginGuard.recordSuccess(key);page="Dashboard";navigate("Dashboard");}
  public void logout(){current=null;showLogin();}
  public void navigate(String dest){
   if(current==null){showLogin();return;}

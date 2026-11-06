@@ -24,7 +24,7 @@ public class BookingView extends JPanel {
         columns.add(details);columns.add(notes);form.add(columns,BorderLayout.CENTER);
         JPanel controls=new JPanel(new FlowLayout(FlowLayout.RIGHT,12,0));controls.setOpaque(false);
         JButton cancel=Theme.secondary("Cancel");cancel.addActionListener(e->app.navigate("Timeslots"));controls.add(cancel);
-        JButton continueButton=Theme.button("Send appointment request");continueButton.addActionListener(e->{if(reason.getText().isBlank()){app.error("Please provide the reason for your visit.");return;}app.requestConsultation(app.bookingDoctor(),app.chosenDate(),app.bookingSlot(),reason.getText().trim());});controls.add(continueButton);
+        JButton continueButton=Theme.button("Send appointment request");continueButton.addActionListener(e->{String reasonError=clyvr.security.Validator.longText("Reason for visit",reason.getText());if(reasonError!=null){app.error(reasonError);return;}app.requestConsultation(app.bookingDoctor(),app.chosenDate(),app.bookingSlot(),reason.getText().trim());});controls.add(continueButton);
         form.add(controls,BorderLayout.SOUTH);p.add(form);add(ViewSupport.wrap(p));
     }
 }

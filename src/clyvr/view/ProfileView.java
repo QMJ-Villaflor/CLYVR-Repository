@@ -22,6 +22,28 @@ public class ProfileView extends JPanel {
    ViewSupport.formValue(med2,"Current medications",u.medications);ViewSupport.formValue(med2,"Medical history",u.medicalHistory);
    rows.add(med1);rows.add(med2);medical.add(rows,BorderLayout.CENTER);medical.setAlignmentX(Component.LEFT_ALIGNMENT);p.add(medical);
   }
+  Theme.space(p,16);
+  JPanel security=Theme.card(new BorderLayout(0,12));security.setAlignmentX(Component.LEFT_ALIGNMENT);
+  security.add(Theme.label("Account Security",21,true),BorderLayout.NORTH);
+  JPanel securityRow=new JPanel(new BorderLayout(16,0));securityRow.setOpaque(false);
+  securityRow.add(Theme.muted("Use at least "+clyvr.security.Validator.MIN_PASSWORD+" characters with a letter and a number."),BorderLayout.CENTER);
+  JButton change=Theme.button("Change password");change.addActionListener(e->changePassword(app));securityRow.add(change,BorderLayout.EAST);
+  security.add(securityRow,BorderLayout.CENTER);p.add(security);
   add(ViewSupport.wrap(p));
+ }
+ private void changePassword(AppController app){
+  User u=app.current;JPasswordField current=new JPasswordField(20),next=new JPasswordField(20),confirm=new JPasswordField(20);
+  JPanel form=new JPanel(new GridLayout(0,1,3,6));form.add(new JLabel("Current password"));form.add(current);form.add(new JLabel("New password"));form.add(next);form.add(new JLabel("Confirm new password"));form.add(confirm);
+  while(true){
+   if(JOptionPane.showConfirmDialog(this,form,"Change password",JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE)!=JOptionPane.OK_OPTION)return;
+   String now=new String(current.getPassword()),pw=new String(next.getPassword()),again=new String(confirm.getPassword());
+   String problem;
+   if(!clyvr.security.FirebaseScrypt.verify(now,u.password))problem="Your current password is incorrect.";
+   else if((problem=clyvr.security.Validator.password(pw,u.email))!=null){}
+   else if(!pw.equals(again))problem="The new passwords do not match.";
+   else if(pw.equals(now))problem="The new password must be different from your current one.";
+   if(problem!=null){app.error(problem);continue;}
+   app.store.changePassword(u,pw);app.info("Your password has been changed.");return;
+  }
  }
 }

@@ -24,7 +24,7 @@ public class RescheduleView extends JPanel {
   content.add(Theme.label("Reason for rescheduling *",15,true));content.add(Box.createVerticalStrut(7));JTextArea reason=Theme.area(4);content.add(new JScrollPane(reason));panel.add(content,BorderLayout.CENTER);
   JPanel controls=new JPanel(new FlowLayout(FlowLayout.RIGHT,12,0));controls.setOpaque(false);JButton cancel=Theme.secondary("Cancel");cancel.addActionListener(e->app.navigate("My Appointments"));controls.add(cancel);
   JButton send=Theme.button("Submit reschedule request");send.addActionListener(e->{
-   if(reason.getText().isBlank()){app.error("Please enter why you need a different appointment time.");return;}
+   String reasonError=clyvr.security.Validator.longText("Reason for rescheduling",reason.getText());if(reasonError!=null){app.error(reasonError);return;}
    LocalDate day=Instant.ofEpochMilli(((java.util.Date)date.getValue()).getTime()).atZone(ZoneId.systemDefault()).toLocalDate();int slot=indexes.get(slots.getSelectedIndex());
    try{app.store.requestReschedule(a,app.current.id,day,slot,reason.getText().trim());app.info("Replacement timeslot reserved pending receptionist approval.");app.navigate("My Appointments");}
    catch(Exception ex){app.error(ex.getMessage());}
