@@ -10,7 +10,8 @@ public final class Entities {
  public enum Status {PENDING_RECEPTIONIST, PENDING_PATIENT, CONFIRMED, REJECTED, DECLINED, EXPIRED, CANCELLED, COMPLETED, NO_SHOW}
  public enum TimeOffStatus {PENDING, APPROVED, REJECTED}
  public static class User {
-  public final String id, username, password, firstName, lastName, email, phone;
+  public String password;
+  public final String id, username, firstName, lastName, email, phone;
   public final Role role;
   public String birthDate="",sex="",address="",bloodType="Unknown",allergies="None reported",conditions="None reported",medications="None reported",medicalHistory="None reported";
   public User(String id,String username,String password,Role role,String firstName,String lastName,String email,String phone){this.id=id;this.username=username;this.password=password;this.role=role;this.firstName=firstName;this.lastName=lastName;this.email=email;this.phone=phone;}
